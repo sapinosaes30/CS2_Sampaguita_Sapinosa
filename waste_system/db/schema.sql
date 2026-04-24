@@ -5,7 +5,11 @@ CREATE TABLE IF NOT EXISTS users (
     city TEXT,
     barangay TEXT,
     house_id TEXT UNIQUE,
-    address TEXT
+    address TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    is_deleted INTEGER DEFAULT 0,
+    deleted_at TEXT
 );
 
 CREATE TABLE IF NOT EXISTS pickups (
@@ -13,6 +17,12 @@ CREATE TABLE IF NOT EXISTS pickups (
     user_id INTEGER NOT NULL,
     date TEXT NOT NULL,
     time TEXT NOT NULL,
+    priority TEXT DEFAULT 'Normal',
+    notes TEXT,
     status TEXT DEFAULT 'Pending',
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    is_deleted INTEGER DEFAULT 0,
+    deleted_at TEXT,
     FOREIGN KEY(user_id) REFERENCES users(user_id)
 );

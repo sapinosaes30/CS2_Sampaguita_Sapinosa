@@ -11,7 +11,11 @@ def initialize_database():
         city TEXT,
         barangay TEXT,
         house_id TEXT UNIQUE,
-        address TEXT
+        address TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        is_deleted INTEGER DEFAULT 0,
+        deleted_at TEXT
     )
     """)
     cur.execute("""
@@ -20,7 +24,13 @@ def initialize_database():
         user_id INTEGER NOT NULL,
         date TEXT NOT NULL,
         time TEXT NOT NULL,
+        priority TEXT DEFAULT 'Normal',
+        notes TEXT,
         status TEXT DEFAULT 'Pending',
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        is_deleted INTEGER DEFAULT 0,
+        deleted_at TEXT,
         FOREIGN KEY(user_id) REFERENCES users(user_id)
     )
     """)

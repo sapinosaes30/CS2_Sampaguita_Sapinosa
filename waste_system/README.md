@@ -2,6 +2,26 @@
 
 A comprehensive Django-based waste management system with role-based access, REST API, and analytics dashboard.
 
+## 🚀 **CRUD Operations Overview**
+
+### **👥 User Management (CRUD)**
+- **Create**: Register new users with role assignment (Admin/Staff/User)
+- **Read**: View user profiles, lists, and role information
+- **Update**: Edit user details, change roles, update contact info
+- **Delete**: Soft delete users (maintain data integrity)
+
+### **🗂️ Waste Pickup Management (CRUD)**
+- **Create**: Schedule new pickup requests with date, location, waste type
+- **Read**: View pickup details, status, assignment, and history
+- **Update**: Modify pickup details, assign to staff, update status
+- **Delete**: Cancel pickups (soft delete to preserve records)
+
+### **♻️ Waste Type Management (CRUD)**
+- **Create**: Add new waste categories with descriptions and pricing
+- **Read**: View waste type details, categories, and associated pickups
+- **Update**: Modify waste type information, pricing, and descriptions
+- **Delete**: Remove unused waste types (with validation)
+
 ## Features
 
 - **Role-based Authentication**: Admin, Staff, and User roles
@@ -66,6 +86,59 @@ waste_system/
 - **Admin**: Full system access, user management, analytics
 - **Staff**: Pickup assignment, completion, limited admin access
 - **User**: Schedule pickups, view own requests
+
+## 🎯 **How to Use CRUD Operations**
+
+### **Web Interface CRUD:**
+
+#### **Users (Admin Only):**
+- **Create**: Admin → Users → "Add User" → Fill form → Save
+- **Read**: Admin → Users → View user list/details
+- **Update**: Admin → Users → Select user → Edit → Save
+- **Delete**: Admin → Users → Select user → Delete (soft delete)
+
+#### **Pickups:**
+- **Create**: Dashboard → "Schedule Pickup" → Fill form → Submit
+- **Read**: Dashboard → View pickup list/status
+- **Update**: Staff/Admin → Pickups → Assign/Complete pickups
+- **Delete**: User → My Pickups → Cancel pickup
+
+#### **Waste Types (Admin Only):**
+- **Create**: Admin → Waste Types → "Add Waste Type" → Save
+- **Read**: Admin → Waste Types → View categories
+- **Update**: Admin → Waste Types → Edit type details
+- **Delete**: Admin → Waste Types → Remove unused types
+
+### **API CRUD:**
+
+#### **Users:**
+```bash
+GET    /api/users/          # List users
+POST   /api/users/          # Create user
+GET    /api/users/{id}/     # Get user details
+PUT    /api/users/{id}/     # Update user
+DELETE /api/users/{id}/     # Delete user
+```
+
+#### **Pickups:**
+```bash
+GET    /api/pickups/        # List pickups
+POST   /api/pickups/        # Create pickup
+GET    /api/pickups/{id}/   # Get pickup details
+PUT    /api/pickups/{id}/   # Update pickup
+DELETE /api/pickups/{id}/   # Delete pickup
+POST   /api/pickups/{id}/assign/    # Assign to staff
+POST   /api/pickups/{id}/complete/  # Mark complete
+```
+
+#### **Waste Types:**
+```bash
+GET    /api/waste-types/    # List waste types
+POST   /api/waste-types/    # Create waste type
+GET    /api/waste-types/{id}/    # Get waste type
+PUT    /api/waste-types/{id}/    # Update waste type
+DELETE /api/waste-types/{id}/    # Delete waste type
+```
 
 ## API Endpoints
 

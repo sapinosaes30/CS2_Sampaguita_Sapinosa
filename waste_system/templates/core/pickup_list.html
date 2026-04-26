@@ -1,0 +1,341 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Pickups - Waste Management{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>
+                <i class="bi bi-list-check text-primary"></i>
+                {% if user.role in 'admin,staff' %}All Pickups{% else %}My Pickups{% endif %}
+            </h2>
+            <a href="{% url 'pickup_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> New Pickup
+            </a>
+        </div>
+
+        <!-- Filters -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="search" class="form-label">Search</label>
+                        <input type="text" class="form-control" id="search" name="search"
+                               value="{{ request.GET.search }}" placeholder="User, notes...">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">All Status</option>
+                            {% for status_choice in status_choices %}
+                            <option value="{{ status_choice.0 }}" {% if request.GET.status == status_choice.0 %}selected{% endif %}>
+                                {{ status_choice.1 }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="date_from" class="form-label">From Date</label>
+                        <input type="date" class="form-control" id="date_from" name="date_from"
+                               value="{{ request.GET.date_from }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="date_to" class="form-label">To Date</label>
+                        <input type="date" class="form-control" id="date_to" name="date_to"
+                               value="{{ request.GET.date_to }}">
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-outline-primary me-2">
+                            <i class="bi bi-search"></i> Filter
+                        </button>
+                        <a href="{% url 'pickup_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i> Clear
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Pickups Table -->
+        <div class="card">
+            <div class="card-body">
+                {% if pickups %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                {% if user.role in 'admin,staff' %}
+                                <th>User</th>
+                                {% endif %}
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                {% if user.role in 'admin,staff' %}
+                                <th>Assigned To</th>
+                                {% endif %}
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pickup in pickups %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'pickup_detail' pickup.id %}" class="text-decoration-none">
+                                        #{{ pickup.id }}
+                                    </a>
+                                </td>
+                                {% if user.role in 'admin,staff' %}
+                                <td>{{ pickup.user.username }}</td>
+                                {% endif %}
+                                <td>{{ pickup.date|date:"M d, Y" }}</td>
+                                <td>{{ pickup.time|time:"g:i A" }}</td>
+                                <td>
+                                    <span class="badge bg-{% if pickup.priority == 'urgent' %}danger{% elif pickup.priority == 'high' %}warning{% elif pickup.priority == 'normal' %}primary{% else %}secondary{% endif %}">
+                                        {{ pickup.get_priority_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if pickup.status == 'completed' %}success{% elif pickup.status == 'in_progress' %}info{% elif pickup.status == 'scheduled' %}primary{% else %}warning{% endif %}">
+                                        {{ pickup.get_status_display }}
+                                    </span>
+                                </td>
+                                {% if user.role in 'admin,staff' %}
+                                <td>
+                                    {% if pickup.assigned_staff %}
+                                        {{ pickup.assigned_staff.username }}
+                                    {% else %}
+                                        <span class="text-muted">Unassigned</span>
+                                    {% endif %}
+                                </td>
+                                {% endif %}
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'pickup_detail' pickup.id %}" class="btn btn-sm btn-outline-primary" title="View">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        {% if user.role in 'admin,staff' or pickup.user == user and pickup.status == 'pending' %}
+                                        <a href="{% url 'pickup_update' pickup.id %}" class="btn btn-sm btn-outline-warning" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        {% endif %}
+                                        {% if user.role in 'admin,staff' %}
+                                        <button type="button" class="btn btn-sm btn-outline-success assign-btn"
+                                                data-pickup-id="{{ pickup.id }}" title="Assign">
+                                            <i class="bi bi-person-plus"></i>
+                                        </button>
+                                        {% if pickup.status in 'scheduled,in_progress' %}
+                                        <button type="button" class="btn btn-sm btn-outline-info complete-btn"
+                                                data-pickup-id="{{ pickup.id }}" title="Complete">
+                                            <i class="bi bi-check-circle"></i>
+                                        </button>
+                                        {% endif %}
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if is_paginated %}
+                <nav aria-label="Pickup pagination" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                Previous
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                        </li>
+                        {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                Next
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox fs-1 text-muted"></i>
+                    <h4 class="text-muted mt-3">No pickups found</h4>
+                    <p class="text-muted">{% if user.role in 'admin,staff' %}No pickups have been created yet.{% else %}You haven't created any pickups yet.{% endif %}</p>
+                    <a href="{% url 'pickup_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Create Your First Pickup
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Assignment Modal -->
+{% if user.role in 'admin,staff' %}
+<div class="modal fade" id="assignModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Assign Pickup</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="assignForm">
+                <div class="modal-body">
+                    <input type="hidden" id="pickupId" name="pickup_id">
+                    <div class="mb-3">
+                        <label for="staffSelect" class="form-label">Select Staff Member</label>
+                        <select class="form-select" id="staffSelect" name="staff_id" required>
+                            <option value="">Choose staff member...</option>
+                            <!-- Staff options will be loaded via JavaScript -->
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Assign</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Completion Modal -->
+<div class="modal fade" id="completeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Complete Pickup</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="completeForm">
+                <div class="modal-body">
+                    <input type="hidden" id="completePickupId" name="pickup_id">
+                    <div class="mb-3">
+                        <label for="completionNotes" class="form-label">Completion Notes (Optional)</label>
+                        <textarea class="form-control" id="completionNotes" name="completion_notes" rows="3"
+                                  placeholder="Any notes about the completion..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Mark as Completed</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    {% if user.role in 'admin,staff' %}
+    // Load staff members for assignment
+    fetch('/api/users/?role=staff&role=admin')
+        .then(response => response.json())
+        .then(data => {
+            const staffSelect = document.getElementById('staffSelect');
+            data.results.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = user.username;
+                staffSelect.appendChild(option);
+            });
+        });
+
+    // Handle assignment buttons
+    document.querySelectorAll('.assign-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const pickupId = this.dataset.pickupId;
+            document.getElementById('pickupId').value = pickupId;
+            new bootstrap.Modal(document.getElementById('assignModal')).show();
+        });
+    });
+
+    // Handle assignment form
+    document.getElementById('assignForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const pickupId = formData.get('pickup_id');
+
+        fetch(`/api/pickups/${pickupId}/assign/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                staff_id: formData.get('staff_id')
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Unknown error'));
+            }
+        });
+    });
+
+    // Handle completion buttons
+    document.querySelectorAll('.complete-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const pickupId = this.dataset.pickupId;
+            document.getElementById('completePickupId').value = pickupId;
+            new bootstrap.Modal(document.getElementById('completeModal')).show();
+        });
+    });
+
+    // Handle completion form
+    document.getElementById('completeForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const pickupId = formData.get('pickup_id');
+
+        fetch(`/api/pickups/${pickupId}/complete/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                completion_notes: formData.get('completion_notes')
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Unknown error'));
+            }
+        });
+    });
+    {% endif %}
+});
+</script>
+{% endblock %}

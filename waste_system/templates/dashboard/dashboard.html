@@ -1,0 +1,298 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Waste Management{% endblock %}
+
+{% block extra_head %}
+<style>
+    .stat-card {
+        transition: transform 0.2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-2px);
+    }
+    .chart-container {
+        position: relative;
+        height: 300px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Welcome Section -->
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="card-title">
+                    <i class="bi bi-house-door text-primary"></i>
+                    Welcome back, {{ user.first_name|default:user.username }}!
+                </h2>
+                <p class="card-text text-muted">
+                    {% if user.role == 'admin' %}
+                        Manage the waste management system and oversee all operations.
+                    {% elif user.role == 'staff' %}
+                        Handle pickup assignments and system maintenance.
+                    {% else %}
+                        Schedule waste pickups and track your requests.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title mb-0">{{ total_pickups }}</h5>
+                        <p class="card-text">Total Pickups</p>
+                    </div>
+                    <i class="bi bi-collection fs-1 opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title mb-0">{{ pending_pickups }}</h5>
+                        <p class="card-text">Pending</p>
+                    </div>
+                    <i class="bi bi-clock fs-1 opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title mb-0">{{ completed_pickups }}</h5>
+                        <p class="card-text">Completed</p>
+                    </div>
+                    <i class="bi bi-check-circle fs-1 opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title mb-0">{{ today_pickups }}</h5>
+                        <p class="card-text">Today</p>
+                    </div>
+                    <i class="bi bi-calendar-day fs-1 opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-pie-chart"></i> Pickup Status Distribution
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-bar-chart"></i> Priority Distribution
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="priorityChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Pickups -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-clock-history"></i> Recent Pickups
+                </h5>
+                <a href="{% url 'pickup_list' %}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-list"></i> View All
+                </a>
+            </div>
+            <div class="card-body">
+                {% if recent_pickups %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>User</th>
+                                <th>Date</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pickup in recent_pickups %}
+                            <tr>
+                                <td>#{{ pickup.id }}</td>
+                                <td>{{ pickup.user.username }}</td>
+                                <td>{{ pickup.date|date:"M d, Y" }}</td>
+                                <td>
+                                    <span class="badge bg-{% if pickup.priority == 'urgent' %}danger{% elif pickup.priority == 'high' %}warning{% elif pickup.priority == 'normal' %}primary{% else %}secondary{% endif %}">
+                                        {{ pickup.get_priority_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if pickup.status == 'completed' %}success{% elif pickup.status == 'in_progress' %}info{% elif pickup.status == 'scheduled' %}primary{% else %}warning{% endif %}">
+                                        {{ pickup.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{% url 'pickup_detail' pickup.id %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-inbox fs-1 text-muted"></i>
+                    <p class="text-muted mt-2">No pickups found.</p>
+                    <a href="{% url 'pickup_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Create First Pickup
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Admin/Staff Stats -->
+{% if user_stats %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-people"></i> System Overview
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <h4 class="text-primary">{{ user_stats.total_users }}</h4>
+                        <p class="text-muted">Total Users</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 class="text-success">{{ user_stats.active_users }}</h4>
+                        <p class="text-muted">Active Users</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 class="text-info">{{ user_stats.staff_count }}</h4>
+                        <p class="text-muted">Staff Members</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 class="text-warning">{{ user_stats.new_users_month }}</h4>
+                        <p class="text-muted">New This Month</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Status Chart
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    const statusData = {{ status_data|safe }};
+
+    new Chart(statusCtx, {
+        type: 'pie',
+        data: {
+            labels: statusData.map(item => item.status.charAt(0).toUpperCase() + item.status.slice(1)),
+            datasets: [{
+                data: statusData.map(item => item.count),
+                backgroundColor: [
+                    '#ffc107', // pending
+                    '#007bff', // scheduled
+                    '#17a2b8', // in_progress
+                    '#28a745', // completed
+                    '#dc3545', // cancelled
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+        }
+    });
+
+    // Priority Chart
+    const priorityCtx = document.getElementById('priorityChart').getContext('2d');
+    const priorityData = {{ priority_data|safe }};
+
+    new Chart(priorityCtx, {
+        type: 'bar',
+        data: {
+            labels: priorityData.map(item => item.priority.charAt(0).toUpperCase() + item.priority.slice(1)),
+            datasets: [{
+                label: 'Count',
+                data: priorityData.map(item => item.count),
+                backgroundColor: [
+                    '#6c757d', // low
+                    '#ffc107', // normal
+                    '#fd7e14', // high
+                    '#dc3545', // urgent
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

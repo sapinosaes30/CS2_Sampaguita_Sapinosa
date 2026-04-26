@@ -128,3 +128,31 @@ def analytics_view(request):
     }
 
     return render(request, 'dashboard/analytics.html', context)
+
+
+def health_check(request):
+    """
+    Health check endpoint for Render monitoring
+    Returns 200 OK if Django and database are healthy
+    """
+    from django.db import connection
+    from django.http import JsonResponse
+
+    try:
+        # Test database connection
+        cursor = connection.cursor()
+        cursor.execute("SELECT 1")
+        cursor.fetchone()
+
+        return JsonResponse({
+            'status': 'healthy',
+            'timestamp': timezone.now().isoformat(),
+            'service': 'waste_management',
+            'version': '1.0.0'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'unhealthy',
+            'error': str(e),
+            'timestamp': timezone.now().isoformat()
+        }, status=500)

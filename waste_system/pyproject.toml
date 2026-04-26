@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.poetry]
+name = "waste-management"
+version = "1.0.0"
+description = "Waste Management System"
+authors = ["Your Name <your.email@example.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+asgiref = "3.8.1"
+dj-database-url = "3.1.2"
+Django = "6.0.4"
+django-filter = "25.2"
+djangorestframework = "3.17.1"
+gunicorn = "23.0.0"
+packaging = "24.1"
+pillow = "11.0.0"
+psycopg2-binary = "2.9.12"
+python-decouple = "3.8"
+sqlparse = "0.5.1"
+tzdata = "2024.2"
+whitenoise = "6.7.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
